@@ -27,6 +27,8 @@ $router->post('/users', [UserController::class, 'createUser']);
 $router->put('/users/{id}', [UserController::class, 'updateUser']);
 $router->delete('/users/{id}', [UserController::class, 'deleteUser']);
 $router->post('/auth/login', [AuthController::class, 'login']);
+$router->post('/auth/refresh', [AuthController::class, 'refresh']);
+
 
 $router->dispatch();
 $response->render();

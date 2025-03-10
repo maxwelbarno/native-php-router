@@ -11,7 +11,7 @@
       "Exceptions\\": "exceptions/",
       "DB\\": "db/",
       "Model\\": "src/models/",
-      "Query\\": "src/",
+      "Query\\": "src/queries",
       "DataMapper\\": "src/",
       "Auth\\": "src/",
       "JWT\\": "src/",

@@ -8,17 +8,16 @@ use PDO;
 
 define("USERNAME", ":username");
 
-class Query
+class UserQuery
 {
     protected $table;
-    protected $primary_key;
+    protected $primaryKey;
     private $conn;
 
-
-    public function __construct($table, $primary_key)
+    public function __construct($table, $primaryKey)
     {
         $this->table = $table;
-        $this->primary_key = $primary_key;
+        $this->primaryKey = $primaryKey;
         $db = new Database();
         $this->conn = $db->connect();
     }
@@ -49,7 +48,7 @@ class Query
     public function findById($id)
     {
         try {
-            $sql = "SELECT * FROM $this->table WHERE $this->primary_key=:id";
+            $sql = "SELECT * FROM $this->table WHERE $this->primaryKey=:id";
             $stmt = $this->conn->prepare($sql);
             $this->bind($stmt, ":id", $id, PDO::PARAM_INT);
             $stmt->execute();

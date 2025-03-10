@@ -2,28 +2,61 @@
 
 namespace JWT;
 
+use Exceptions\CustomException;
+
 class Jwt
 {
-    public function __construct(private string $key)
+    public function __construct(private string $secretKey)
     {
-    }
-
-    private function base64URLEncode(string $text): string
-    {
-        return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($text));
     }
 
     public function encode(array $payload): string
     {
         $header = json_encode([
-            "alg" => "HS256",
-            "typ" => "JWT"
+        "alg" => "HS256",
+        "typ" => "JWT"
         ]);
-        $header = $this->base64URLEncode($header);
+        $header = $this->base64UrlEncode($header);
         $payload = json_encode($payload);
-        $payload = $this->base64URLEncode($payload);
-        $signature = hash_hmac("sha256", $header . "." . $payload, $this->key, true);
-        $signature = $this->base64URLEncode($signature);
+        $payload = $this->base64UrlEncode($payload);
+        $signature = hash_hmac("sha256", $header . "." . $payload, $this->secretKey, true);
+        $signature = $this->base64UrlEncode($signature);
         return $header . "." . $payload . "." . $signature;
+    }
+
+    public function decode($token)
+    {
+        if (preg_match("/^(?<header>.+)\.(?<payload>.+)\.(?<signature>.+)$/", $token, $matches) !== 1) {
+            throw new CustomException("Invalid Token Format");
+        }
+
+        $signature = hash_hmac("sha256", $matches["header"] . "." . $matches["payload"], $this->secretKey, true);
+        $signatureFromToken = $this->base64UrlDecode($matches["signature"]);
+
+        if (!hash_equals($signature, $signatureFromToken)) {
+            throw new CustomException("Invalid Signature");
+        }
+
+        $payload = json_decode($this->base64UrlDecode($matches["payload"]), true);
+        if ($payload['exp'] < time()) {
+            throw new CustomException("Token Expired");
+        }
+        return $payload;
+    }
+
+    private function base64UrlEncode(string $text): string
+    {
+        return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($text));
+    }
+
+    private function base64UrlDecode(string $text): string
+    {
+        return base64_decode(
+            str_replace(
+                ["-", "_"],
+                ["+", "/"],
+                $text
+            )
+        );
     }
 }

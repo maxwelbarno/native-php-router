@@ -4,7 +4,7 @@ namespace DataMapper;
 
 use Exceptions\CustomException;
 use Model\User;
-use Query\Query;
+use Query\UserQuery;
 
 class UserMapper
 {
@@ -16,7 +16,7 @@ class UserMapper
     {
         $this->table = "users";
         $this->primaryKey = "id";
-        $this->query = new Query($this->table, $this->primaryKey);
+        $this->query = new UserQuery($this->table, $this->primaryKey);
     }
 
     public function save(User $user)

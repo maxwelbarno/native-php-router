@@ -2,32 +2,61 @@
 
 namespace Auth;
 
+use DataMapper\TokenMapper;
 use DataMapper\UserMapper;
 use JWT\Jwt;
+use Model\Token;
 
 class Auth
 {
-    private $data;
-    public function authenticate($data)
+    public function authenticate($username, $password)
     {
-        $this->data = new UserMapper();
-        $username = $data['username'];
-        $password = $data['password'];
-        $user = $this->data->fetchByUsername($username);
+        $data = new UserMapper();
+        $user = $data->fetchByUsername($username);
         if ($user) {
-            $payload = [
-                "sub" => $user->getId(),
-                "username" => $user->getUsername(),
-                "exp" => time() + 20
-            ];
-            $secret_key = $_ENV['SECRET_KEY'];
-            $jwt = new Jwt($secret_key);
-            $access_token = $jwt->encode($payload);
             $hash = $user->getPassword();
             if (password_verify($password, $hash)) {
-                return $access_token;
+                return $this->generateTokens($user, $_ENV["SECRET_KEY"]);
             }
             return null;
         }
+    }
+
+    public function authorize()
+    {
+        if (preg_match("/^Bearer\s+(.*)$/", $_SERVER["HTTP_AUTHORIZATION"], $matches)) {
+            $jwt = new Jwt($_ENV["SECRET_KEY"]);
+            $jwt->decode($matches[1]);
+            return true;
+        }
+    }
+
+    public function getTokens($token)
+    {
+        try {
+            $tokenData = new TokenMapper();
+            if ($tokenData->delete($token)) {
+                $jwt = new Jwt($_ENV["SECRET_KEY"]);
+                $payload = $jwt->decode($token);
+                $userId = $payload['sub'];
+                $userData = new UserMapper();
+                $user = $userData->fetchOne($userId);
+                return $this->generateTokens($user, $_ENV["SECRET_KEY"]);
+            } else {
+                return false;
+            }
+        } catch (\Throwable $th) {
+            print_r($th->getMessage());
+        }
+    }
+
+    public function generateTokens($user, $secretKey)
+    {
+        $tokenData = new TokenMapper();
+        $payload = ["sub" => $user->getId(),"username" => $user->getUsername(),"exp" => time() + 60];
+        $jwt = new Jwt($secretKey);
+        $refresh_token = $jwt->encode(["sub" => $user->getId(), "exp" => time() + 43200]);
+        $tokenData->save(new Token($refresh_token));
+        return ["access_token" => $jwt->encode($payload),"refresh_token" => $refresh_token];
     }
 }
