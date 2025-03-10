@@ -7,6 +7,7 @@ use Exceptions\CustomException;
 use JWT\Jwt;
 use PDO;
 
+define("HASH", ":token_hash");
 class TokenQuery
 {
     protected $table;
@@ -29,7 +30,7 @@ class TokenQuery
         try {
             $sql = "INSERT INTO $this->table(token_hash, expires_at) VALUES(:token_hash,:expires_at)";
             $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, ":token_hash", $hash);
+            $this->bind($stmt, HASH, $hash);
             $this->bind($stmt, ":expires_at", $payload["exp"]);
             return $stmt->execute();
         } catch (CustomException $e) {
@@ -53,7 +54,7 @@ class TokenQuery
         try {
             $sql = "SELECT * FROM $this->table WHERE token_hash=:token_hash";
             $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, ":token_hash", $hash);
+            $this->bind($stmt, HASH, $hash);
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (CustomException $e) {
@@ -67,7 +68,7 @@ class TokenQuery
         try {
             $sql = "DELETE FROM $this->table  WHERE token_hash = :token_hash";
             $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, ":token_hash", $hash);
+            $this->bind($stmt, HASH, $hash);
             return $stmt->execute();
         } catch (CustomException $e) {
             $e->render();
