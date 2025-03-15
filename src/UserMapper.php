@@ -74,7 +74,7 @@ class UserMapper
         try {
             $data = [
                 "username" => $user->getUsername(),
-                "password" => $user->getPassword(),
+                "password" => password_hash($user->getPassword(), PASSWORD_DEFAULT)
             ];
             return $this->query->update($data, $id);
         } catch (CustomException $e) {
