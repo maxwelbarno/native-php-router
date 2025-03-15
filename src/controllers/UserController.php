@@ -21,8 +21,8 @@ class UserController extends Controller
         try {
             $request_body = $this->request->getRequestBody();
             $user = new User(($request_body));
-            $data = new UserMapper();
-            $res = $data->save($user);
+            $repository = new UserMapper();
+            $res = $repository->save($user);
             $res ? response($this->response, "HTTP/1.1 201 Created", 201) :
             throw new CustomException("Error in Request Body");
         } catch (CustomException $e) {
@@ -33,8 +33,8 @@ class UserController extends Controller
     public function getUser($id)
     {
         try {
-            $data = new UserMapper();
-            $user = $data->fetchOne($id);
+            $repository = new UserMapper();
+            $user = $repository->fetchOne($id);
             $keys = ["id","username", "password"];
             $user ? response($this->response, OK, 200, null, array_combine($keys, (array)$user)) :
             throw new CustomException("User with ID {$id} Not Found");
@@ -46,11 +46,11 @@ class UserController extends Controller
     public function getUsers()
     {
         try {
-            $data = new UserMapper();
+            $repository = new UserMapper();
             $auth = new Auth();
             if ($auth->authorize()) {
                 try {
-                    $users = $data->fetchAll();
+                    $users = $repository->fetchAll();
                     if ($users) {
                         $list = [];
                         foreach ($users as $user) {
@@ -75,9 +75,10 @@ class UserController extends Controller
     {
         try {
             $request_body = $this->request->getRequestBody();
-            $user = new User(($request_body));
-            $data = new UserMapper();
-            $data->fetchOne($id) ? $data->update($user, $id) . (response($this->response, OK, 200)) :
+            $data = new User(($request_body));
+            $repository = new UserMapper();
+            $user = $repository->fetchOne($id);
+            $user && $repository->update($data, $id) ? response($this->response, OK, 200) :
             throw new CustomException("User with ID {$id} Not Found");
         } catch (CustomException $e) {
             response($this->response, NOT_FOUND, 404, $e->getMessage());
@@ -87,8 +88,8 @@ class UserController extends Controller
     public function deleteUser($id)
     {
         try {
-            $data = new UserMapper();
-            $data->fetchOne($id) ? $data->delete($id) . response($this->response, OK, 200) :
+            $repository = new UserMapper();
+            $repository->fetchOne($id) ? $repository->delete($id) . response($this->response, OK, 200) :
             throw new CustomException("User with ID {$id} Not Found");
         } catch (CustomException $e) {
             response($this->response, NOT_FOUND, 404, $e->getMessage());
