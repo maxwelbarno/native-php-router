@@ -89,7 +89,8 @@ class UserController extends Controller
     {
         try {
             $repository = new UserMapper();
-            $repository->fetchOne($id) ? $repository->delete($id) . response($this->response, OK, 200) :
+            $user = $repository->fetchOne($id);
+            $user && $repository->delete($id) ? response($this->response, OK, 200) :
             throw new CustomException("User with ID {$id} Not Found");
         } catch (CustomException $e) {
             response($this->response, NOT_FOUND, 404, $e->getMessage());
