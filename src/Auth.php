@@ -4,6 +4,7 @@ namespace Auth;
 
 use DataMapper\TokenMapper;
 use DataMapper\UserMapper;
+use Exceptions\CustomException;
 use JWT\Jwt;
 use Model\Token;
 
@@ -11,23 +12,30 @@ class Auth
 {
     public function authenticate($username, $password)
     {
-        $data = new UserMapper();
-        $user = $data->fetchByUsername($username);
-        if ($user) {
-            $hash = $user->getPassword();
-            if (password_verify($password, $hash)) {
-                return $this->generateTokens($user, $_ENV["SECRET_KEY"]);
+        try {
+            $data = new UserMapper();
+            $user = $data->fetchByUsername($username);
+            if ($user) {
+                $hash = $user->getPassword();
+                return password_verify($password, $hash) ? $this->generateTokens($user, $_ENV["SECRET_KEY"]) : null;
             }
-            return null;
+        } catch (CustomException $e) {
+            $e->render();
         }
     }
 
     public function authorize()
     {
-        if (preg_match("/^Bearer\s+(.*)$/", $_SERVER["HTTP_AUTHORIZATION"], $matches)) {
-            $jwt = new Jwt($_ENV["SECRET_KEY"]);
-            $jwt->decode($matches[1]);
-            return true;
+        try {
+            if (!isset($_SERVER["HTTP_AUTHORIZATION"])) {
+                return false;
+            } elseif (preg_match("/^Bearer\s+(.*)$/", $_SERVER["HTTP_AUTHORIZATION"], $matches)) {
+                $jwt = new Jwt($_ENV["SECRET_KEY"]);
+                $jwt->decode($matches[1]);
+                return true;
+            }
+        } catch (CustomException $e) {
+            $e->render();
         }
     }
 
@@ -45,18 +53,22 @@ class Auth
             } else {
                 return false;
             }
-        } catch (\Throwable $th) {
-            print_r($th->getMessage());
+        } catch (CustomException $e) {
+            $e->render();
         }
     }
 
     public function generateTokens($user, $secretKey)
     {
-        $tokenData = new TokenMapper();
-        $payload = ["sub" => $user->getId(),"username" => $user->getUsername(),"exp" => time() + 60];
-        $jwt = new Jwt($secretKey);
-        $refresh_token = $jwt->encode(["sub" => $user->getId(), "exp" => time() + 43200]);
-        $tokenData->save(new Token($refresh_token));
-        return ["access_token" => $jwt->encode($payload),"refresh_token" => $refresh_token];
+        try {
+            $tokenData = new TokenMapper();
+            $payload = ["sub" => $user->getId(),"username" => $user->getUsername(),"exp" => time() + 60];
+            $jwt = new Jwt($secretKey);
+            $refresh_token = $jwt->encode(["sub" => $user->getId(), "exp" => time() + 43200]);
+            $tokenData->save(new Token($refresh_token));
+            return ["access_token" => $jwt->encode($payload),"refresh_token" => $refresh_token];
+        } catch (CustomException $e) {
+            $e->render();
+        }
     }
 }

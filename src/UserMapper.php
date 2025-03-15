@@ -53,9 +53,7 @@ class UserMapper
     {
         try {
             $data = $this->query->findById($id);
-            if ($data) {
-                return new User($data);
-            }
+            return $data ? new User($data) : null;
         } catch (CustomException $e) {
             $e->render();
         }
@@ -65,9 +63,7 @@ class UserMapper
     {
         try {
             $data = $this->query->findByUsername($username);
-            if ($data) {
-                return new User($data);
-            }
+            return $data ? new User($data) : null;
         } catch (CustomException $e) {
             $e->render();
         }
@@ -75,15 +71,23 @@ class UserMapper
 
     public function update(User $user, $id)
     {
-        $data = [
-            "username" => $user->getUsername(),
-            "password" => $user->getPassword(),
-        ];
-        return $this->query->update($data, $id);
+        try {
+            $data = [
+                "username" => $user->getUsername(),
+                "password" => $user->getPassword(),
+            ];
+            return $this->query->update($data, $id);
+        } catch (CustomException $e) {
+            $e->render();
+        }
     }
 
     public function delete($id)
     {
-        return $this->query->delete($id);
+        try {
+            return $this->query->delete($id);
+        } catch (CustomException $e) {
+            $e->render();
+        }
     }
 }

@@ -23,7 +23,7 @@ $router = new Router($request->getUrl(), $request->getHttpMethod());
 $router->get("/", [HomeController::class, 'index']);
 $router->get('/users/{id}', [UserController::class, 'getUser']);
 $router->get('/users', [UserController::class, 'getUsers']);
-$router->post('/users', [UserController::class, 'createUser']);
+$router->post('/users/register', [UserController::class, 'createUser']);
 $router->put('/users/{id}', [UserController::class, 'updateUser']);
 $router->delete('/users/{id}', [UserController::class, 'deleteUser']);
 $router->post('/auth/login', [AuthController::class, 'login']);

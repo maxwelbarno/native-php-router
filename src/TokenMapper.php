@@ -37,10 +37,6 @@ class TokenMapper
         $tk = new Token($jwtToken);
         $token = $tk->getToken();
         $hash = $this->query->findByToken($token);
-        if ($hash) {
-            return $this->query->delete($token);
-        } else {
-            return false;
-        }
+        return $hash ? $this->query->delete($token) : false;
     }
 }

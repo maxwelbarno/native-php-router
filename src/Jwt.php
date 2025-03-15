@@ -26,22 +26,15 @@ class Jwt
 
     public function decode($token)
     {
-        if (preg_match("/^(?<header>.+)\.(?<payload>.+)\.(?<signature>.+)$/", $token, $matches) !== 1) {
-            throw new CustomException("Invalid Token Format");
-        }
+        preg_match("/^(?<header>.+)\.(?<payload>.+)\.(?<signature>.+)$/", $token, $matches) !== 1 ?
+        throw new CustomException("Invalid Token Format") : null;
 
         $signature = hash_hmac("sha256", $matches["header"] . "." . $matches["payload"], $this->secretKey, true);
         $signatureFromToken = $this->base64UrlDecode($matches["signature"]);
-
-        if (!hash_equals($signature, $signatureFromToken)) {
-            throw new CustomException("Invalid Signature");
-        }
+        !hash_equals($signature, $signatureFromToken) ? throw new CustomException("Invalid Signature") : null;
 
         $payload = json_decode($this->base64UrlDecode($matches["payload"]), true);
-        if ($payload['exp'] < time()) {
-            throw new CustomException("Token Expired");
-        }
-        return $payload;
+        return $payload['exp'] < time() ? throw new CustomException("Token Expired") : $payload;
     }
 
     private function base64UrlEncode(string $text): string

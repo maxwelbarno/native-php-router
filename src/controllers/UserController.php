@@ -12,6 +12,7 @@ use function Helpers\response;
 
 define("OK", "HTTP/1.1 200 OK");
 define("NOT_FOUND", "HTTP/1.1 404 Not Found");
+define("UNAUTHORIZED", "HTTP/1.1 401 Unauthorized");
 
 class UserController extends Controller
 {
@@ -22,11 +23,8 @@ class UserController extends Controller
             $user = new User(($request_body));
             $data = new UserMapper();
             $res = $data->save($user);
-            if ($res) {
-                response($this->response, "HTTP/1.1 201 Created", 201);
-            } else {
-                throw new CustomException("Error in Request Body");
-            }
+            $res ? response($this->response, "HTTP/1.1 201 Created", 201) :
+            throw new CustomException("Error in Request Body");
         } catch (CustomException $e) {
             response($this->response, "HTTP/1.1 400 Bad Request", 400, $e->getMessage());
         }
@@ -37,12 +35,9 @@ class UserController extends Controller
         try {
             $data = new UserMapper();
             $user = $data->fetchOne($id);
-            if ($user) {
-                $data = array_combine(["id","username", "password"], (array)$user);
-                response($this->response, OK, 200, null, $data);
-            } else {
-                throw new CustomException("User with ID {$id} Not Found");
-            }
+            $keys = ["id","username", "password"];
+            $user ? response($this->response, OK, 200, null, array_combine($keys, (array)$user)) :
+            throw new CustomException("User with ID {$id} Not Found");
         } catch (CustomException $e) {
             response($this->response, NOT_FOUND, 404, $e->getMessage());
         }
@@ -68,9 +63,11 @@ class UserController extends Controller
                 } catch (CustomException $e) {
                     response($this->response, NOT_FOUND, 404, $e->getMessage());
                 }
+            } else {
+                response($this->response, UNAUTHORIZED, 401, "Missing Authorization Header", null);
             }
         } catch (CustomException $e) {
-            response($this->response, "401 Unauthorized", 401, $e->getMessage());
+            response($this->response, UNAUTHORIZED, 401, $e->getMessage());
         }
     }
 
@@ -80,12 +77,8 @@ class UserController extends Controller
             $request_body = $this->request->getRequestBody();
             $user = new User(($request_body));
             $data = new UserMapper();
-            if ($data->fetchOne($id)) {
-                $data->update($user, $id);
-                response($this->response, OK, 200);
-            } else {
-                throw new CustomException("User with ID {$id} Not Found");
-            }
+            $data->fetchOne($id) ? $data->update($user, $id) . (response($this->response, OK, 200)) :
+            throw new CustomException("User with ID {$id} Not Found");
         } catch (CustomException $e) {
             response($this->response, NOT_FOUND, 404, $e->getMessage());
         }
@@ -95,12 +88,8 @@ class UserController extends Controller
     {
         try {
             $data = new UserMapper();
-            if ($data->fetchOne($id)) {
-                $data->delete($id);
-                response($this->response, OK, 200);
-            } else {
-                throw new CustomException("User with ID {$id} Not Found");
-            }
+            $data->fetchOne($id) ? $data->delete($id) . response($this->response, OK, 200) :
+            throw new CustomException("User with ID {$id} Not Found");
         } catch (CustomException $e) {
             response($this->response, NOT_FOUND, 404, $e->getMessage());
         }
