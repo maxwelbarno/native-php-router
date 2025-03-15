@@ -12,23 +12,22 @@ class UserQuery
 {
     protected $table;
     protected $primaryKey;
-    private $conn;
+    private $db;
 
     public function __construct($table, $primaryKey)
     {
         $this->table = $table;
         $this->primaryKey = $primaryKey;
-        $db = new Database();
-        $this->conn = $db->connect();
+        $this->db = new Database();
     }
 
     public function create(array $data): int
     {
         try {
             $sql = "INSERT INTO $this->table(username, password) VALUES(:username,:password)";
-            $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, USERNAME, $data['username']);
-            $this->bind($stmt, ":password", $data['password']);
+            $stmt = $this->db->pdo->prepare($sql);
+            $this->db->bind($stmt, USERNAME, $data['username']);
+            $this->db->bind($stmt, ":password", $data['password']);
             return $stmt->execute();
         } catch (CustomException $e) {
             $e->render();
@@ -38,8 +37,7 @@ class UserQuery
     public function findAll()
     {
         try {
-            $sql = "SELECT * FROM $this->table";
-            return $this->query($sql);
+            return $this->db->query("SELECT * FROM $this->table");
         } catch (CustomException $e) {
             $e->render();
         }
@@ -49,10 +47,9 @@ class UserQuery
     {
         try {
             $sql = "SELECT * FROM $this->table WHERE $this->primaryKey=:id";
-            $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, ":id", $id, PDO::PARAM_INT);
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = $this->db->pdo->prepare($sql);
+            $this->db->bind($stmt, ":id", $id, PDO::PARAM_INT);
+            return $this->db->queryOne($stmt);
         } catch (CustomException $e) {
             $e->render();
         }
@@ -62,10 +59,9 @@ class UserQuery
     {
         try {
             $sql = "SELECT * FROM $this->table WHERE username=:username";
-            $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, USERNAME, $username);
-            $stmt->execute();
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = $this->db->pdo->prepare($sql);
+            $this->db->bind($stmt, USERNAME, $username);
+            return $this->db->queryOne($stmt);
         } catch (CustomException $e) {
             $e->render();
         }
@@ -75,10 +71,10 @@ class UserQuery
     {
         try {
             $sql = "UPDATE $this->table SET username = :username, password = :password WHERE id = :id";
-            $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, ":id", $id);
-            $this->bind($stmt, USERNAME, $data['username']);
-            $this->bind($stmt, ":password", $data['password']);
+            $stmt = $this->db->pdo->prepare($sql);
+            $this->db->bind($stmt, ":id", $id);
+            $this->db->bind($stmt, USERNAME, $data['username']);
+            $this->db->bind($stmt, ":password", $data['password']);
             return $stmt->execute();
         } catch (CustomException $e) {
             $e->render();
@@ -89,23 +85,11 @@ class UserQuery
     {
         try {
             $sql = "DELETE FROM $this->table  WHERE id = :id";
-            $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, ":id", $id, PDO::PARAM_INT);
+            $stmt = $this->db->pdo->prepare($sql);
+            $this->db->bind($stmt, ":id", $id, PDO::PARAM_INT);
             return $stmt->execute();
         } catch (CustomException $e) {
             $e->render();
         }
-    }
-
-    private function query($sql)
-    {
-        $query = $this->conn->prepare($sql);
-        $query->execute();
-        return $query->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    private function bind($stmt, $parameter, $value, $return_type = PDO::PARAM_STR)
-    {
-        $stmt->bindValue($parameter, $value, $return_type);
     }
 }

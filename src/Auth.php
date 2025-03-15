@@ -62,7 +62,7 @@ class Auth
     {
         try {
             $tokenData = new TokenMapper();
-            $payload = ["sub" => $user->getId(),"username" => $user->getUsername(),"exp" => time() + 60];
+            $payload = ["sub" => $user->getId(),"username" => $user->getUsername(),"exp" => time() + 600];
             $jwt = new Jwt($secretKey);
             $refresh_token = $jwt->encode(["sub" => $user->getId(), "exp" => time() + 43200]);
             $tokenData->save(new Token($refresh_token));

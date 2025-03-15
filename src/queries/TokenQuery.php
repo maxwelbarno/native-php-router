@@ -12,14 +12,13 @@ class TokenQuery
 {
     protected $table;
     protected $secretKey;
-    private $conn;
+    private $db;
 
     public function __construct($table, $secretKey)
     {
         $this->table = $table;
         $this->secretKey = $secretKey;
-        $db = new Database();
-        $this->conn = $db->connect();
+        $this->db = new Database();
     }
 
     public function create($data): int
@@ -29,9 +28,9 @@ class TokenQuery
         $payload = $jwt->decode($data['token']);
         try {
             $sql = "INSERT INTO $this->table(token_hash, expires_at) VALUES(:token_hash,:expires_at)";
-            $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, HASH, $hash);
-            $this->bind($stmt, ":expires_at", $payload["exp"]);
+            $stmt = $this->db->pdo->prepare($sql);
+            $this->db->bind($stmt, HASH, $hash);
+            $this->db->bind($stmt, ":expires_at", $payload["exp"]);
             return $stmt->execute();
         } catch (CustomException $e) {
             $e->render();
@@ -42,7 +41,7 @@ class TokenQuery
     {
         try {
             $sql = "SELECT * FROM $this->table";
-            return $this->query($sql);
+            return $this->db->query($sql);
         } catch (CustomException $e) {
             $e->render();
         }
@@ -53,8 +52,8 @@ class TokenQuery
         $hash = hash_hmac("sha256", $token, $this->secretKey);
         try {
             $sql = "SELECT * FROM $this->table WHERE token_hash=:token_hash";
-            $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, HASH, $hash);
+            $stmt = $this->db->pdo->prepare($sql);
+            $this->db->bind($stmt, HASH, $hash);
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (CustomException $e) {
@@ -67,23 +66,11 @@ class TokenQuery
         $hash = hash_hmac("sha256", $token, $this->secretKey);
         try {
             $sql = "DELETE FROM $this->table  WHERE token_hash = :token_hash";
-            $stmt = $this->conn->prepare($sql);
-            $this->bind($stmt, HASH, $hash);
+            $stmt = $this->db->pdo->prepare($sql);
+            $this->db->bind($stmt, HASH, $hash);
             return $stmt->execute();
         } catch (CustomException $e) {
             $e->render();
         }
-    }
-
-    private function query($sql)
-    {
-        $query = $this->conn->prepare($sql);
-        $query->execute();
-        return $query->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    private function bind($stmt, $parameter, $value, $return_type = PDO::PARAM_STR)
-    {
-        $stmt->bindValue($parameter, $value, $return_type);
     }
 }
